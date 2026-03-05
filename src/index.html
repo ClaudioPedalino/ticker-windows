@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CryptoWidget</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+      -webkit-app-region: drag;
+      /* entire body is draggable */
+    }
+
+    #widget {
+      width: 100%;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      /* reduced from 10px */
+      gap: 0px;
+      position: relative;
+
+      background: rgba(10, 10, 14, 0.75);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 12px;
+
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 6px 28px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+      font-family: 'JetBrains Mono', monospace;
+      cursor: default;
+    }
+
+    .divider {
+      width: 1px;
+      height: 18px;
+      /* reduced from 22 */
+      background: rgba(255, 255, 255, 0.08);
+      margin: 0 4px;
+      /* reduced from 8px */
+      flex-shrink: 0;
+    }
+
+    .asset {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      /* reduced from 7px */
+      padding: 3px 5px;
+      /* reduced from 7px */
+      border-radius: 8px;
+      transition: background 0.2s ease;
+      cursor: default;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .asset:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Error border specific to asset */
+    .asset::after {
+      content: '';
+      position: absolute;
+      bottom: -11px;
+      /* Reach bottom of widget border */
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background: transparent;
+      border-radius: 6px;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      pointer-events: none;
+    }
+
+    .asset.error-border::after {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    .asset-icon {
+      width: 20px;
+      /* reduced from 22px */
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      /* reduced from 11px */
+      font-weight: 700;
+      flex-shrink: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .icon-btc {
+      background: linear-gradient(135deg, #f7931a, #ffb84d);
+      color: #fff;
+      box-shadow: 0 0 6px rgba(247, 147, 26, 0.4);
+    }
+
+    .icon-hbar {
+      background: linear-gradient(135deg, #1a1a2e, #4a4a6a);
+      color: #8ecfff;
+      box-shadow: 0 0 6px rgba(142, 207, 255, 0.2);
+    }
+
+    .icon-usdt {
+      background: linear-gradient(135deg, #26a17b, #3fcba0);
+      color: #fff;
+      box-shadow: 0 0 6px rgba(38, 161, 123, 0.4);
+    }
+
+    .icon-warn {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+    }
+
+    .icon-err {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+    }
+
+    .asset-price {
+      font-size: 14px;
+      /* reduced from 15px */
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.5px;
+      transition: color 0.4s ease;
+      text-align: right;
+      min-width: 48px;
+      /* reduced from 52px */
+      line-height: 1;
+    }
+
+    .price-up {
+      color: #4ade80;
+    }
+
+    .price-down {
+      color: #f87171;
+    }
+
+    .price-flat {
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .trend-arrow {
+      font-size: 9px;
+      line-height: 1;
+      opacity: 0.75;
+      width: 9px;
+      text-align: center;
+    }
+
+    .status-dot {
+      width: 22px;
+      /* reduced from 26px */
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      flex-shrink: 0;
+      margin-left: 0px;
+      /* reduced from 2px */
+    }
+
+    .status-dot svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    .dot-live {
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .dot-warn {
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .dot-error {
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .dot-live svg {
+      stroke: #22c55e;
+      animation: pulse-green 2s ease-in-out infinite;
+    }
+
+    .dot-warn svg {
+      stroke: #f59e0b;
+      animation: pulse-yellow 1s ease-in-out infinite;
+    }
+
+    .dot-error svg {
+      stroke: #ef4444;
+      fill: #ef4444;
+      animation: shake 0.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-green {
+
+      0%,
+      100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 3px #22c55e);
+      }
+
+      50% {
+        opacity: .5;
+        filter: none;
+      }
+    }
+
+    @keyframes pulse-yellow {
+
+      0%,
+      100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 3px #f59e0b);
+      }
+
+      50% {
+        opacity: .4;
+      }
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-1px);
+      }
+
+      75% {
+        transform: translateX(1px);
+      }
+    }
+
+    .loading {
+      background: linear-gradient(90deg,
+          rgba(255, 255, 255, 0.05) 25%,
+          rgba(255, 255, 255, 0.13) 50%,
+          rgba(255, 255, 255, 0.05) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      color: transparent !important;
+      height: 15px;
+      min-width: 52px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    @keyframes flash-update {
+      0% {
+        opacity: 1;
+      }
+
+      30% {
+        opacity: 0.25;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .flash {
+      animation: flash-update 0.35s ease;
+    }
+
+    .spacer {
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="widget">
+
+    <!-- BTC -->
+    <div class="asset" id="asset-btc">
+      <div class="asset-icon icon-btc" id="icon-btc" data-orig="₿" data-class="icon-btc">₿</div>
+      <div class="asset-price loading" id="price-btc">------</div>
+      <div class="trend-arrow" id="arrow-btc"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- HBAR -->
+    <div class="asset" id="asset-hbar">
+      <div class="asset-icon icon-hbar" id="icon-hbar" data-orig="ℏ" data-class="icon-hbar">ℏ</div>
+      <div class="asset-price loading" id="price-hbar">------</div>
+      <div class="trend-arrow" id="arrow-hbar"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- USDT / Dólar Cripto ARS -->
+    <div class="asset" id="asset-usdt">
+      <div class="asset-icon icon-usdt" id="icon-usdt" data-orig="₮" data-class="icon-usdt">₮</div>
+      <div class="asset-price loading" id="price-usdt">------</div>
+      <div class="trend-arrow" id="arrow-usdt"></div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <!-- Status -->
+    <div class="status-dot dot-live" id="status-dot">
+      <svg id="status-icon" viewBox="0 0 24 24">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+        <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <path d="M12 20h.01"></path>
+      </svg>
+    </div>
+
+  </div>
+
+  <script>
+    const state = {
+      btc: { price: null, price4h: null, errors: 0 },
+      hbar: { price: null, price4h: null, errors: 0 },
+      usdt: { price: null, price4h: null, errors: 0 },
+      lastSuccess: null,
+    };
+
+    function fmt(n, decimals) {
+      if (n === null || n === undefined) return '---';
+      return Number(n).toLocaleString('es-AR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function flash(el) {
+      el.classList.remove('flash');
+      void el.offsetWidth;
+      el.classList.add('flash');
+    }
+
+    function setPrice(id, value, arrowId, decimals, trend) {
+      const el = document.getElementById(id);
+      const arrow = document.getElementById(arrowId);
+      el.classList.remove('loading', 'price-up', 'price-down', 'price-flat');
+      if (trend === 'up') {
+        el.classList.add('price-up');
+        arrow.textContent = '▲';
+        arrow.style.color = '#4ade80';
+      } else if (trend === 'down') {
+        el.classList.add('price-down');
+        arrow.textContent = '▼';
+        arrow.style.color = '#f87171';
+      } else {
+        el.classList.add('price-flat');
+        arrow.textContent = '';
+      }
+      const formatted = fmt(value, decimals);
+      if (el.textContent !== formatted) { el.textContent = formatted; flash(el); }
+    }
+
+    function getTrend(current, ref) {
+      if (!ref || !current) return 'flat';
+      return current > ref ? 'up' : current < ref ? 'down' : 'flat';
+    }
+
+    function updateAssetIcon(assetKey) {
+      const errCount = state[assetKey].errors;
+      const assetEl = document.getElementById('asset-' + assetKey);
+      const iconEl = document.getElementById('icon-' + assetKey);
+      const origText = iconEl.getAttribute('data-orig');
+      const origClass = iconEl.getAttribute('data-class');
+
+      iconEl.className = 'asset-icon';
+      assetEl.classList.remove('error-border');
+
+      if (errCount >= 3) {
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        iconEl.classList.add('icon-err');
+        assetEl.classList.add('error-border');
+      } else if (errCount === 2) {
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+        iconEl.classList.add('icon-warn');
+      } else {
+        iconEl.innerHTML = origText;
+        iconEl.classList.add(origClass);
+      }
+    }
+
+    function updateGlobalStatus() {
+      const maxErrors = Math.max(state.btc.errors, state.hbar.errors, state.usdt.errors);
+      const dot = document.getElementById('status-dot');
+      const icon = document.getElementById('status-icon');
+
+      if (maxErrors >= 3) {
+        dot.className = 'status-dot dot-error';
+        icon.innerHTML = `<circle cx="12" cy="12" r="5" fill="#ef4444" stroke="none" />`;
+      } else if (maxErrors === 2) {
+        dot.className = 'status-dot dot-warn';
+        icon.innerHTML = `
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+      <path d="M12 20h.01"></path>
+    `;
+      } else {
+        dot.className = 'status-dot dot-live';
+        icon.innerHTML = `
+      <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+      <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+      <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+      <path d="M12 20h.01"></path>
+    `;
+      }
+    }
+
+    async function fetchBinancePrices() {
+      try {
+        const res = await fetch(
+          'https://api.binance.com/api/v3/ticker?symbols=%5B%22BTCUSDT%22,%22HBARUSDT%22%5D&windowSize=4h',
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (!res.ok) throw new Error('binance_api_error');
+        const tickers = await res.json();
+
+        const btcData = tickers.find(t => t.symbol === 'BTCUSDT');
+        const hbarData = tickers.find(t => t.symbol === 'HBARUSDT');
+
+        state.btc.price = parseFloat(btcData.lastPrice);
+        state.btc.price4h = parseFloat(btcData.openPrice);
+        state.btc.errors = 0;
+
+        state.hbar.price = parseFloat(hbarData.lastPrice);
+        state.hbar.price4h = parseFloat(hbarData.openPrice);
+        state.hbar.errors = 0;
+
+        state.lastSuccess = Date.now();
+
+        setPrice('price-btc', state.btc.price, 'arrow-btc', 0, getTrend(state.btc.price, state.btc.price4h));
+        setPrice('price-hbar', state.hbar.price, 'arrow-hbar', 4, getTrend(state.hbar.price, state.hbar.price4h));
+
+      } catch (e) {
+        console.warn('Binance:', e.message);
+        state.btc.errors++;
+        state.hbar.errors++;
+      }
+      updateAssetIcon('btc');
+      updateAssetIcon('hbar');
+    }
+
+    async function fetchDolarCripto() {
+      try {
+        const res = await fetch('https://dolarapi.com/v1/dolares/cripto', { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) throw new Error('dolarapi');
+        const data = await res.json();
+
+        const cur = parseFloat(data.venta);
+        if (!state.usdt.price4h) state.usdt.price4h = state.usdt.price || cur; // Use current as initial 4h reference
+        state.usdt.price = cur;
+        state.usdt.errors = 0;
+
+        state.lastSuccess = Date.now();
+        setPrice('price-usdt', state.usdt.price, 'arrow-usdt', 0, getTrend(state.usdt.price, state.usdt.price4h));
+
+      } catch (e) {
+        console.warn('DolarAPI:', e.message);
+        state.usdt.errors++;
+      }
+      updateAssetIcon('usdt');
+    }
+
+    async function fetchAll() {
+      await Promise.allSettled([fetchBinancePrices(), fetchDolarCripto()]);
+      updateGlobalStatus();
+    }
+
+    // Initial fetch and start intervals
+    fetchAll();
+    setInterval(fetchAll, 30_000);
+  </script>
+</body>
+
+</html>
