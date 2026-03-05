@@ -1,3 +1,5 @@
+![CryptoWidget preview](assets/widget-preview.png)
+
 # CryptoWidget
 
 Lightweight Windows desktop widget that shows real-time crypto prices with a transparent, always-on-top UI.
@@ -73,7 +75,6 @@ crypto-widget/
     preload.js          # Context bridge
     fullscreen_check.cs # Windows fullscreen state helper source
   package.json
-  .gitignore
   README.md
 ```
 
@@ -93,40 +94,6 @@ crypto-widget/
 - DolarAPI:
   - `/v1/dolares/cripto`
 
-## Preparing a Public GitHub Repository
-
-Use this checklist before publishing:
-
-1. Confirm no sensitive files exist:
-
-```powershell
-Get-ChildItem -Force -Recurse -File | Where-Object { $_.Name -match "(\.env|secret|token|key|credential)" }
-```
-
-2. Ensure `.gitignore` is applied (already included in this repo).
-3. Verify local build works:
-
-```powershell
-npm install
-npm run build
-```
-
-4. Initialize git and create first commit:
-
-```powershell
-git init
-git add .
-git commit -m "Initial public release of CryptoWidget"
-```
-
-5. Create GitHub repo and push:
-
-```powershell
-git branch -M main
-git remote add origin https://github.com/<your-user>/<your-repo>.git
-git push -u origin main
-```
-
 ## Troubleshooting
 
 - `npm start` fails:
@@ -140,4 +107,4 @@ git push -u origin main
 
 ## License
 
-Choose and add a license file before publishing publicly (for example `MIT`).
+No license file is currently included.
